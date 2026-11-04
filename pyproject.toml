@@ -1,0 +1,27 @@
+[project]
+name = "deepfake-detection-explainer"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "fellipessanha", email = "fellipe900@gmail.com" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "facenet-pytorch>=2.5.3",
+    "opencv-python>=5.0.0.93",
+    "pillow>=13.0.0",
+    "tqdm>=4.70.1",
+]
+
+[project.scripts]
+deepfake-detection-explainer = "deepfake_detection_explainer:main"
+
+[build-system]
+requires = ["uv_build>=0.12.17,<0.13.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.2.0",
+]
