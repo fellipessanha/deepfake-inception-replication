@@ -8,3 +8,6 @@ wheels/
 
 # Virtual environments
 .venv
+
+# heavy resources we don't want commited
+resources/faceforensis*
