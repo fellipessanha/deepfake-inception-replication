@@ -13,7 +13,7 @@ class FaceModel(datasets.ImageFolder):
         root: str | Path,
         transform: Callable | None = None,
         target_transform: Callable | None = None,
-        loader: Callable[[str], Any] = ...,
+        loader: Callable[[str], Any] = datasets.folder.default_loader,
         is_valid_file: Callable[[str], bool] | None = None,
         allow_empty: bool = False,
         valid_classes: list[str] = CLASS_NAMES,
