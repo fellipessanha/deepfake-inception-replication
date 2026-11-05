@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 from PIL import Image
 
-from deepfake_detection_explainer.video_manipulation.helpers import _crop_faces
+from inception_replication.video_manipulation.helpers import _crop_faces
 
 W, H = 64, 48
 

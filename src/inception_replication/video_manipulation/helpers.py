@@ -6,7 +6,7 @@ from facenet_pytorch import MTCNN
 from numpy.typing import ArrayLike
 from PIL import Image
 
-from deepfake_detection_explainer.configs import DEFAULT_CUTOFF_PROBABILITY, DEVICE
+from inception_replication.configs import DEFAULT_CUTOFF_PROBABILITY, DEVICE
 
 
 def iterate_frames(capture: Path | str | cv2.VideoCapture) -> Iterator[ArrayLike]:
