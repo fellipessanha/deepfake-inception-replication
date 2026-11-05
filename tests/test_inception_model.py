@@ -1,6 +1,6 @@
 import torch
 
-from inception_replication.classification.face_classification import (
+from inception_replication.classification.inception_model import (
     InceptionModel,
 )
 
