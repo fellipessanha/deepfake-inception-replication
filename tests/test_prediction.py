@@ -54,4 +54,3 @@ def test_no_gradients_tracked():
 def test_empty_dataset_raises():
     with pytest.raises(ValueError, match="empty"):
         prediction(EchoModel(), [])
-        breakpoint()
