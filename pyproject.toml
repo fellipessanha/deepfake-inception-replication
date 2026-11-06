@@ -27,3 +27,6 @@ build-backend = "uv_build"
 dev = [
     "pytest>=9.2.0",
 ]
+
+[tool.basedpyright]
+typeCheckingMode = "standard"
