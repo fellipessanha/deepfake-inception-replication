@@ -17,7 +17,7 @@ TRANSFORM_COMPOSITION = transforms.Compose(
 )
 
 
-class FaceModel(datasets.ImageFolder):
+class FaceFolder(datasets.ImageFolder):
     def __init__(
         self,
         root: str | Path,
