@@ -1,7 +1,13 @@
 import pytest
+import torch
+from PIL import Image
 from torchvision.datasets.folder import default_loader
 
-from inception_replication.classification.face_model import FaceModel
+from inception_replication.classification.face_model import (
+    IMAGENET_MEAN_PARAMS,
+    IMAGENET_STD_PARAMS,
+    FaceModel,
+)
 from inception_replication.configs import CLASS_NAMES
 
 
@@ -33,3 +39,26 @@ def test_custom_classes():
 
 def test_default_loader_is_torchvision_default():
     assert FaceModel("any/root").loader is default_loader
+
+
+def _dataset_of(image, **kwargs):
+    # In-memory loader: every sample "opens" to the same image, no file read.
+    return FaceModel("any/root", loader=lambda _: image, **kwargs)
+
+
+def test_default_transform_stretches_to_inception_input():
+    x, _ = _dataset_of(Image.new("RGB", (100, 60)))[0]  # non-square, like a face crop
+    assert x.shape == (3, 299, 299)
+    assert x.dtype == torch.float32
+
+
+def test_default_transform_normalizes_with_imagenet_stats():
+    x, _ = _dataset_of(Image.new("RGB", (8, 8), (128, 128, 128)))[0]
+    expected = (128 / 255 - torch.tensor(IMAGENET_MEAN_PARAMS)) / torch.tensor(IMAGENET_STD_PARAMS)
+    assert torch.allclose(x.mean(dim=(1, 2)), expected, atol=1e-5)
+
+
+def test_transform_can_be_overridden():
+    image = Image.new("RGB", (8, 8))
+    x, _ = _dataset_of(image, transform=None)[0]
+    assert x is image
