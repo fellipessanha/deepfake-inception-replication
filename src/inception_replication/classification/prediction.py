@@ -8,8 +8,15 @@ def prediction(
     model: torch.nn.Module,
     dataset: Dataset,
     batch_size: int = 32,
+    num_workers: int = 0,
 ):
-    loader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
+    loader = DataLoader(
+        dataset,
+        batch_size=batch_size,
+        shuffle=False,
+        num_workers=num_workers,
+        pin_memory=DEVICE.type == "cuda",
+    )
 
     with torch.no_grad():
         batch_results = tuple(zip(*[_process_batch(model, batch) for batch in loader]))

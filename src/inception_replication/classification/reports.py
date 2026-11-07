@@ -9,7 +9,7 @@ from torch.utils.data import Subset
 from inception_replication.classification.face_folder import FaceFolder
 from inception_replication.classification.inception_model import InceptionModel
 from inception_replication.classification.prediction import prediction
-from inception_replication.configs import CLASS_NAMES, DEVICE
+from inception_replication.configs import CLASS_NAMES, DEVICE, PRETRAINED_INCEPTION_PATH
 
 
 def get_report(
@@ -54,6 +54,8 @@ def run_pipeline(
     limit: int | None = None,
     batch_size: int = 32,
     seed: int = 0,
+    weights: str | Path = PRETRAINED_INCEPTION_PATH,
+    num_workers: int = 0,
 ) -> tuple[str, pd.DataFrame]:
     dataset = FaceFolder(test_dir)
     if limit:
@@ -63,8 +65,10 @@ def run_pipeline(
             dataset, torch.randperm(len(dataset), generator=generator)[:limit].tolist()
         )
 
-    model = InceptionModel().to(DEVICE).eval()
-    targets, predictions, probabilities = prediction(model, dataset, batch_size)
+    model = InceptionModel(inception_specs=weights).to(DEVICE).eval()
+    targets, predictions, probabilities = prediction(
+        model, dataset, batch_size, num_workers
+    )
 
     report = get_report(prediction_values=predictions, target_values=targets)
     frame = predictions_report_dataframe(targets, predictions, probabilities)
@@ -87,9 +91,26 @@ def _main() -> None:
         "--limit", type=int, help="predict only a seeded random subset of this size"
     )
     parser.add_argument("--batch-size", type=int, default=32)
+    parser.add_argument(
+        "--weights",
+        default=PRETRAINED_INCEPTION_PATH,
+        help="model checkpoint (default: resources/ in the repo checkout)",
+    )
+    parser.add_argument(
+        "--num-workers",
+        type=int,
+        default=0,
+        help="processes loading images in parallel; ~CPU count on a GPU machine",
+    )
     args = parser.parse_args()
 
-    report, frame = run_pipeline(args.test_dir, args.limit, args.batch_size)
+    report, frame = run_pipeline(
+        args.test_dir,
+        limit=args.limit,
+        batch_size=args.batch_size,
+        weights=args.weights,
+        num_workers=args.num_workers,
+    )
     print(report)
     if args.output:
         frame.to_csv(args.output, index=False)
