@@ -17,7 +17,7 @@ class InceptionModel(torch.nn.Module):
         # No ImageNet weights: the checkpoint below overwrites every parameter anyway.
         self.class_names = available_classes
         self.inception_model: models.Inception3 = models.inception_v3(
-            weights=None, aux_logits=False, init_weights=False
+            weights=None, aux_logits=False, init_weights=False, transform_input=True
         )
         self.inception_model.fc = torch.nn.Linear(
             self.inception_model.fc.in_features, len(self.class_names)
