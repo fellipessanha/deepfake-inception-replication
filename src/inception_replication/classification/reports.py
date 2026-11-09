@@ -7,9 +7,9 @@ from sklearn.metrics import classification_report, confusion_matrix
 from torch.utils.data import Subset
 
 from inception_replication.classification.face_folder import FaceFolder
-from inception_replication.classification.inception_model import InceptionModel
+from inception_replication.classification.inception_model import load_model
 from inception_replication.classification.prediction import prediction
-from inception_replication.configs import CLASS_NAMES, DEVICE, PRETRAINED_INCEPTION_PATH
+from inception_replication.configs import CLASS_NAMES, PRETRAINED_INCEPTION_PATH
 
 
 def get_report(
@@ -65,7 +65,7 @@ def run_pipeline(
             dataset, torch.randperm(len(dataset), generator=generator)[:limit].tolist()
         )
 
-    model = InceptionModel(inception_specs=weights).to(DEVICE).eval()
+    model = load_model(weights)
     targets, predictions, probabilities = prediction(
         model, dataset, batch_size, num_workers
     )

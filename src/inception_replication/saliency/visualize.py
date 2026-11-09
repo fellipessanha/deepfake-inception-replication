@@ -14,11 +14,14 @@ from PIL import Image
 from inception_replication.classification.face_folder import (
     IMAGENET_MEAN_PARAMS,
     IMAGENET_STD_PARAMS,
-    TRANSFORM_COMPOSITION,
     FaceFolder,
 )
-from inception_replication.classification.inception_model import InceptionModel
-from inception_replication.configs import DEVICE
+from inception_replication.classification.inception_model import (
+    Prediction,
+    load_model,
+    predict,
+    preprocess,
+)
 from inception_replication.saliency.explainers import ExplainerMethods, saliency_map
 from inception_replication.saliency.spotlight import spotlight
 
@@ -32,12 +35,10 @@ def to_raw_image(x: torch.Tensor) -> torch.Tensor:
 
 def explain(
     model: torch.nn.Module, x: torch.Tensor, methods=tuple(ExplainerMethods)
-) -> tuple[int, dict[str, np.ndarray]]:
-    "x: (3, H, W) normalized image -> predicted class index, {method name: saliency map}."
-    x = x.unsqueeze(0).to(DEVICE)
-    with torch.no_grad():
-        target = int(model(x).argmax(dim=1).item())
-    return target, {m.name: saliency_map(m, model, x, target) for m in methods}
+) -> tuple[Prediction, dict[str, np.ndarray]]:
+    "x: (3, H, W) normalized image -> its Prediction, {method name: saliency map of the top class}."
+    pred = predict(model, x)
+    return pred, {m.name: saliency_map(m, model, pred.x, pred.target) for m in methods}
 
 
 def plot_explanation(
@@ -99,18 +100,20 @@ def saliency_grid(model, dataset: FaceFolder, indices, methods=tuple(ExplainerMe
     names = dataset.class_names
     for row, idx in zip(rows, indices):
         x, label = dataset[idx]
-        target, maps = explain(model, x, methods)
-        title = f"real: {names[label]}\npred: {names[target]}"
+        pred, maps = explain(model, x, methods)
+        title = f"real: {names[label]}\npred: {pred.label}"
         plot_explanation(to_raw_image(x), maps, title, axes=row)
     fig.tight_layout()
     return fig
 
 
-def explain_image(model, image_path, methods=tuple(ExplainerMethods)):
-    "A single face image from disk: same preprocessing as FaceFolder, no true label."
-    x = TRANSFORM_COMPOSITION(Image.open(image_path).convert("RGB"))
-    target, maps = explain(model, x, methods)
-    axes = plot_explanation(to_raw_image(x), maps, f"pred: {model.class_names[target]}")
+def explain_image(
+    model, image: Image.Image, methods=tuple(ExplainerMethods), plot=plot_explanation
+):
+    "One face image, no true label: `plot` draws the row (plot_explanation or ..._with_spotlight)."
+    x = preprocess(image)
+    pred, maps = explain(model, x, methods)
+    axes = plot(to_raw_image(x), maps, f"pred: {pred.label}")
     fig = axes[0].figure
     fig.tight_layout()
     return fig
@@ -126,9 +129,9 @@ def _main() -> None:
     parser.add_argument("--seed", type=int, default=0)
     args = parser.parse_args()
 
-    model = InceptionModel().to(DEVICE).eval()
+    model = load_model()
     if Path(args.path).is_file():
-        fig = explain_image(model, args.path)
+        fig = explain_image(model, Image.open(args.path))
     else:
         dataset = FaceFolder(args.path)
         generator = torch.Generator().manual_seed(args.seed)
@@ -148,13 +151,9 @@ def _spotlight_main() -> None:
     parser.add_argument("-o", "--output", default="saliency_spotlight.png")
     args = parser.parse_args()
 
-    model = InceptionModel().to(DEVICE).eval()
-    x = TRANSFORM_COMPOSITION(Image.open(args.path).convert("RGB"))
-    target, maps = explain(model, x)
-    title = f"pred: {model.class_names[target]}"
-    axes = plot_explanation_with_spotlight(to_raw_image(x), maps, title)
-    fig = axes[0].figure
-    fig.tight_layout()
+    fig = explain_image(
+        load_model(), Image.open(args.path), plot=plot_explanation_with_spotlight
+    )
     fig.savefig(args.output, dpi=100)
     print(f"spotlight plot written to {args.output}")
 

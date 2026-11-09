@@ -1,6 +1,7 @@
 import torch
 from torch.utils.data import DataLoader, Dataset
 
+from inception_replication.classification.inception_model import classify
 from inception_replication.configs import DEVICE
 
 
@@ -18,8 +19,7 @@ def prediction(
         pin_memory=DEVICE.type == "cuda",
     )
 
-    with torch.no_grad():
-        batch_results = tuple(zip(*[_process_batch(model, batch) for batch in loader]))
+    batch_results = tuple(zip(*[_process_batch(model, batch) for batch in loader]))
     if not batch_results:
         raise ValueError("dataset is empty: nothing to predict.")
     return tuple(torch.cat(result) for result in batch_results)
@@ -28,9 +28,8 @@ def prediction(
 def _process_batch(
     model: torch.nn.Module,
     batch: tuple[torch.Tensor, torch.Tensor],
-    device: torch.device = DEVICE,
-) -> tuple[list[torch.Tensor], list[torch.Tensor], list[torch.Tensor]]:
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     inputs, targets = batch
-    probs = model(inputs.to(device)).softmax(dim=1).cpu()
+    probs = classify(model, inputs)
 
     return targets, probs.argmax(dim=1), probs
