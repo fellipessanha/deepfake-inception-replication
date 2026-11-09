@@ -27,6 +27,9 @@ video = [
 
 [project.scripts]
 inception-replication = "inception_replication:main"
+inception-report = "inception_replication.classification.reports:_main"
+saliency-visualize = "inception_replication.saliency.visualize:_main"
+saliency-spotlight = "inception_replication.saliency.visualize:_spotlight_main"
 
 [build-system]
 requires = ["uv_build>=0.12.17,<0.13.0"]
@@ -43,6 +46,10 @@ saliency = [
     "pandas>=3.1.1",
     "scikit-learn>=1.9.1",
 ]
+
+[tool.uv]
+# saliency commands need captum, so plain `uv run saliency-*` works without --group
+default-groups = ["dev", "saliency"]
 
 [tool.basedpyright]
 typeCheckingMode = "standard"
