@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from matplotlib.axes import Axes
+from matplotlib.patches import Rectangle
 from PIL import Image
 
 from inception_replication.classification.face_folder import (
@@ -19,6 +20,7 @@ from inception_replication.classification.face_folder import (
 from inception_replication.classification.inception_model import InceptionModel
 from inception_replication.configs import DEVICE
 from inception_replication.saliency.explainers import ExplainerMethods, saliency_map
+from inception_replication.saliency.spotlight import spotlight
 
 
 def to_raw_image(x: torch.Tensor) -> torch.Tensor:
@@ -53,6 +55,38 @@ def plot_explanation(
         ax.set_title(name, fontsize=9)
     for ax in axes:
         ax.axis("off")
+    return axes
+
+
+def plot_spotlight(ax: Axes, raw: torch.Tensor, saliency: np.ndarray, title: str) -> None:
+    "The spotlight image, with its box converted back from Qwen 0-1000 coords to pixels."
+    lit, (x1, y1, x2, y2) = spotlight(np.asarray(raw), saliency)
+    h, w = saliency.shape
+    ax.imshow(lit)
+    ax.add_patch(
+        Rectangle(
+            (x1 * w / 1000, y1 * h / 1000),
+            (x2 - x1) * w / 1000,
+            (y2 - y1) * h / 1000,
+            fill=False,
+            edgecolor="lime",
+            linewidth=1,
+        )
+    )
+    ax.set_title(title, fontsize=9)
+    ax.axis("off")
+
+
+def plot_explanation_with_spotlight(
+    raw: torch.Tensor, maps: dict[str, np.ndarray], title: str, axes=None
+) -> np.ndarray:
+    "plot_explanation's row plus one last column: the GradCAM spotlight. `maps` must hold GradCAM."
+    if axes is None:
+        columns = len(maps) + 2
+        _, axes = plt.subplots(1, columns, figsize=(3 * columns, 3))
+    plot_explanation(raw, maps, title, axes=axes[:-1])
+    name = ExplainerMethods.GradCAM.name
+    plot_spotlight(axes[-1], raw, maps[name], f"{name} spotlight")
     return axes
 
 
@@ -103,6 +137,26 @@ def _main() -> None:
 
     fig.savefig(args.output, dpi=100)
     print(f"saliency plot written to {args.output}")
+
+
+def _spotlight_main() -> None:
+    # shortcut: single image only, since saliency_grid has no spotlight column; add a folder mode if needed
+    parser = argparse.ArgumentParser(
+        description="Plot saliency maps plus the GradCAM spotlight for one face image."
+    )
+    parser.add_argument("path", help="a single face image")
+    parser.add_argument("-o", "--output", default="saliency_spotlight.png")
+    args = parser.parse_args()
+
+    model = InceptionModel().to(DEVICE).eval()
+    x = TRANSFORM_COMPOSITION(Image.open(args.path).convert("RGB"))
+    target, maps = explain(model, x)
+    title = f"pred: {model.class_names[target]}"
+    axes = plot_explanation_with_spotlight(to_raw_image(x), maps, title)
+    fig = axes[0].figure
+    fig.tight_layout()
+    fig.savefig(args.output, dpi=100)
+    print(f"spotlight plot written to {args.output}")
 
 
 if __name__ == "__main__":
