@@ -24,6 +24,10 @@ uv run saliency-visualize <split_dir> -n 4 --seed 0 -o saliency_grid.png
 # Same row as above plus the GradCAM spotlight (one image only)
 uv run saliency-spotlight <image.png> -o saliency_spotlight.png
 
+# VLM inputs for one image: GradCAM spotlight + heatmap at full resolution, and class probabilities
+#   writes <stem>_spotlight.png, <stem>_gradcam.png, <stem>.json
+uv run saliency-vlm-input <image.png> -o vlm_input/
+
 # Tests (no resources needed)
 uv run pytest
 ```
