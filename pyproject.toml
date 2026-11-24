@@ -24,6 +24,16 @@ video = [
     "facenet-pytorch>=2.5.3",
     "opencv-python>=5.0.0.93",
 ]
+# Pick at most one. No extra = same as `cuda`.
+cuda = [
+    "torch>=2.8",
+    "torchvision>=0.23",
+]
+# Pascal GPUs (e.g. Tesla P100) on old drivers (>=450): torch 2.7 is the last built for CUDA 11.8
+pascal = [
+    "torch>=2.6,<2.8", # transformers 5 needs >=2.6
+    "torchvision<0.23",
+]
 
 [project.scripts]
 inception-replication = "inception_replication:main"
@@ -57,6 +67,17 @@ vlm = [
 [tool.uv]
 # saliency/vlm commands need captum/transformers, so plain `uv run saliency-*` / `vlm-explain` works without --group
 default-groups = ["dev", "saliency", "vlm"]
+# lets the lock hold both torch builds; uv needs two entries, hence the `cuda` extra
+conflicts = [[{ extra = "pascal" }, { extra = "cuda" }]]
+
+[[tool.uv.index]]
+name = "pytorch-cu118"
+url = "https://download.pytorch.org/whl/cu118"
+explicit = true # only torch/torchvision come from here, and only with --extra pascal
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu118", extra = "pascal" }
+torchvision = { index = "pytorch-cu118", extra = "pascal" }
 
 [tool.basedpyright]
 typeCheckingMode = "standard"

@@ -46,6 +46,8 @@ the mounted HF cache downloads them on the first run and reuses them after that.
 
 ```sh
 docker build -t inception-vlm .
+# Pascal GPUs (Tesla P100...) or drivers older than CUDA 12: torch 2.7 built for CUDA 11.8
+docker build --build-arg TORCH_EXTRA=pascal -t inception-vlm .
 docker run --rm --gpus all \
   -v ~/.cache/huggingface:/root/.cache/huggingface \
   -v "$PWD":/work \
