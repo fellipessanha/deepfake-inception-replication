@@ -31,6 +31,7 @@ inception-report = "inception_replication.classification.reports:_main"
 saliency-visualize = "inception_replication.saliency.visualize:_main"
 saliency-spotlight = "inception_replication.saliency.visualize:_spotlight_main"
 saliency-vlm-input = "inception_replication.saliency.vlm_input:_main"
+vlm-explain = "inception_replication.vlm_interpretation.face_explanation:_main"
 
 [build-system]
 requires = ["uv_build>=0.12.17,<0.13.0"]
@@ -47,10 +48,15 @@ saliency = [
     "pandas>=3.1.1",
     "scikit-learn>=1.9.1",
 ]
+vlm = [
+    "transformers>=4.57", # Qwen3-VL
+    "accelerate",         # device_map
+    "bitsandbytes",       # 4-bit loading
+]
 
 [tool.uv]
-# saliency commands need captum, so plain `uv run saliency-*` works without --group
-default-groups = ["dev", "saliency"]
+# saliency/vlm commands need captum/transformers, so plain `uv run saliency-*` / `vlm-explain` works without --group
+default-groups = ["dev", "saliency", "vlm"]
 
 [tool.basedpyright]
 typeCheckingMode = "standard"

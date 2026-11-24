@@ -28,11 +28,32 @@ uv run saliency-spotlight <image.png> -o saliency_spotlight.png
 #   writes <stem>_spotlight.png, <stem>_gradcam.png, <stem>.json
 uv run saliency-vlm-input <image.png> -o vlm_input/
 
+# VLM explanation of one cropped face: prediction + GradCAM + Qwen3-VL text (needs a CUDA GPU)
+#   writes <stem>_spotlight.png, <stem>_gradcam.png, <stem>.json (with "explanation")
+uv run vlm-explain <face.png> -o vlm_output/ [--prompt Activation|Specifics|Claude]
+uv run vlm-explain <face.png> --system-prompt "$(cat my_prompt.txt)"
+
 # Tests (no resources needed)
 uv run pytest
 ```
 
 Each command takes `--help`.
+
+## Docker (`vlm-explain`)
+
+Needs the NVIDIA Container Toolkit on the host. The Qwen weights (~9 GB) are not in the image:
+the mounted HF cache downloads them on the first run and reuses them after that.
+
+```sh
+docker build -t inception-vlm .
+docker run --rm --gpus all \
+  -v ~/.cache/huggingface:/root/.cache/huggingface \
+  -v "$PWD":/work \
+  inception-vlm faces/some_face.png [--prompt Claude | --system-prompt "..."]
+```
+
+Outputs land in `./vlm_output` and are owned by root; add `--user $(id -u):$(id -g) -e HF_HOME=/work/.hf`
+to get them as your user.
 
 ## Expected `resources/` layout
 
