@@ -15,5 +15,9 @@ RUN uv sync --frozen --no-default-groups --group saliency --group vlm --extra "$
 
 # Qwen weights are not baked in: mount a HF cache at /root/.cache/huggingface (see README)
 ENV PATH=/app/.venv/bin:$PATH
+# the NVIDIA toolkit mounts libcuda only for these capabilities; nvidia/cuda images set them, the slim base doesn't
+ENV NVIDIA_VISIBLE_DEVICES=all NVIDIA_DRIVER_CAPABILITIES=compute,utility
+# old drivers can't use the expandable-segments allocator; False is torch's default anyway
+ENV PYTORCH_CUDA_ALLOC_CONF=expandable_segments:False
 WORKDIR /work
 ENTRYPOINT ["vlm-explain"]
